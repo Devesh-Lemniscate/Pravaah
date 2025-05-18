@@ -87,7 +87,7 @@ const Start = () => {
             </span>
           </button>
         </Link>
-      </div>
+        </div>
 
       {/* Footer Section */}
       <div className="w-full text-center pb-6 text-lg text-gray-500 hover:text-white hover:transition-all hover:duration-300">
