@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Animation for the SVG car */
+@keyframes drive {
+  0% {
+    transform: translateX(-40%); /* Start far outside the left edge */
+  }
+  100% {
+    transform: translateX(620%); /* End far outside the right edge */
+  }
+}
+
+.animate-drive {
+  position: absolute;
+  bottom: 0;
+  animation: drive 20s linear infinite;
+}
+
+
+
