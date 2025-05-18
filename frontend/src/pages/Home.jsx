@@ -166,32 +166,18 @@ const Home = () => {
         <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 bg-yellow-900/90 rounded-lg p-4 shadow-lg text-sm">
           Only one route available for these locations.
         </div>
-      ) : paths.length === 2 ? (
-        <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 bg-gray-900/90 rounded-lg p-4 shadow-lg flex flex-col gap-2 text-sm text-center">
-          <div className="flex justify-center gap-4 mb-1">
-            {paths.map((path, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 rounded-full" style={{ background: path.color }}></span>
-                {path.label}
-              </div>
-            ))}
-          </div>
-          <div className="text-yellow-300">{getSharedMetrics()}</div>
-        </div>
-      ) : paths.length >= 3 ? (
+      ) : paths.length > 1 ? (
         <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 bg-gray-900/90 rounded-lg p-4 shadow-lg flex flex-row gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-4 h-4 rounded-full" style={{ background: '#00f' }}></span>
-            Shortest Distance
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-4 h-4 rounded-full" style={{ background: '#0f0' }}></span>
-            Least Fuel
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-4 h-4 rounded-full" style={{ background: '#f00' }}></span>
-            Shortest Time
-          </div>
+          {paths.map((path, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 rounded-full" style={{ background: path.color }}></span>
+              {path.label}
+              {path.label === 'Alternate Route' && (
+                <span className="text-xs text-yellow-400 ml-1">(complementary)</span>
+              )}
+            </div>
+          ))}
+          {paths.length === 2 && <div className="text-yellow-300">{getSharedMetrics()}</div>}
         </div>
       ) : null}
 
@@ -199,16 +185,31 @@ const Home = () => {
       {paths.length > 0 && (
         <div className="absolute bottom-5 right-5 z-20 bg-gray-900/90 rounded-lg p-4 shadow-lg flex flex-col gap-2 text-sm min-w-[220px]">
           <div>
-            <span className="font-semibold text-blue-400">Fastest Route:</span>
-            <span className="ml-2">{fastest.time} min</span>
+            <span className="font-semibold text-blue-400">Best Algorithm:</span>
+            <span className="ml-2 font-bold text-yellow-300 uppercase px-2 py-1 rounded">
+              {paths[0].algorithm || "Unknown"}
+            </span>
           </div>
           <div>
-            <span className="font-semibold text-green-400">Cheapest Route:</span>
-            <span className="ml-2">{cheapest.fuel} L</span>
+            <span className="font-semibold text-cyan-400">Distance:</span>
+            <span className="ml-2">{paths[0].distance} km</span>
           </div>
           <div>
-            <span className="font-semibold text-cyan-400">Shortest Route:</span>
-            <span className="ml-2">{shortest.distance} km</span>
+            <span className="font-semibold text-blue-400">Time:</span>
+            <span className="ml-2">
+              {(() => {
+                const totalMin = Number(paths[0].time);
+                const hr = Math.floor(totalMin / 60);
+                const min = Math.round(totalMin % 60);
+                return hr > 0
+                  ? `${hr} hr${hr > 1 ? 's' : ''} ${min} min`
+                  : `${min} min`;
+              })()}
+            </span>
+          </div>
+          <div>
+            <span className="font-semibold text-green-400">Fuel:</span>
+            <span className="ml-2">{paths[0].fuel} L</span>
           </div>
         </div>
       )}
@@ -224,6 +225,12 @@ const Home = () => {
               draggable: true,
               gestureHandling: 'greedy',
               disableDefaultUI: false,
+              mapTypeControl: false, // Hide Map/Satellite
+              zoomControl: true,
+              zoomControlOptions: {
+                position: window.google.maps.ControlPosition.LEFT_BOTTOM, // Change position here
+              },
+              // You can similarly set position for other controls if needed
             }}
             onLoad={map => { mapRef.current = map; }}
           >
@@ -313,6 +320,13 @@ const Home = () => {
           />
         </div>
       </div>
+
+      {/* Notification for alternate route */}
+      {paths.some(p => p.label === 'Alternate Route') && (
+        <div className="absolute top-[90px] left-1/2 -translate-x-1/2 z-20 bg-orange-900/90 rounded-lg p-3 shadow text-xs text-orange-200">
+          An alternate route is shown for demonstration purposes.
+        </div>
+      )}
     </div>
   );
 };
