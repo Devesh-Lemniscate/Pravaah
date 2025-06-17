@@ -1,5 +1,4 @@
 const axios = require('axios');
-const captainModel = require('../models/captain.model');
 
 module.exports.getAddressCoordinate = async (address) => {
     const apiKey = process.env.GOOGLE_MAPS_API;
@@ -34,7 +33,7 @@ module.exports.getDistanceTime = async (origin, destination) => {
         const response = await axios.get(url);
         if (response.data.status === 'OK') {
             const distanceData = response.data.rows[0].elements[0];
-            const tollData = await getTollData(origin, destination); // Fetch toll info
+            const tollData = await getTollData(); // Toll info yahan se la rahe hain
             return {
                 distance: distanceData.distance,
                 duration: distanceData.duration,
@@ -49,10 +48,10 @@ module.exports.getDistanceTime = async (origin, destination) => {
     }
 }
 
-// Helper function to fetch toll data
-async function getTollData(origin, destination) {
-    // Mock toll data or integrate with a toll API
-    return Math.random() * 100; // Example: Random toll cost
+// Helper function jo toll data laata hai
+async function getTollData() {
+    // Yahan pe ya toh mock toll data use karo ya phir toll API se integrate karo
+    return Math.random() * 100; // Example: Random toll cost de rahe hain
 }
 
 module.exports.getAutoCompleteSuggestions = async (input) => {
@@ -74,22 +73,4 @@ module.exports.getAutoCompleteSuggestions = async (input) => {
         console.error(err);
         throw err;
     }
-}
-
-module.exports.getCaptainsInTheRadius = async (ltd, lng, radius) => {
-
-    // radius in km
-
-
-    const captains = await captainModel.find({
-        location: {
-            $geoWithin: {
-                $centerSphere: [ [ ltd, lng ], radius / 6371 ]
-            }
-        }
-    });
-
-    return captains;
-
-
 }

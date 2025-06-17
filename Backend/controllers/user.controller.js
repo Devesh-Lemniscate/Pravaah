@@ -43,7 +43,7 @@ module.exports.loginUser = async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    const user = await userModel.findOne({ email }).select('+password');
+    const user = await userModel.findOne({ email }).select('+password'); // includes the password field too in db search
 
     if (!user) {
         return res.status(401).json({ message: 'Invalid email or password' });
@@ -53,7 +53,7 @@ module.exports.loginUser = async (req, res, next) => {
 
     if (!isMatch) {
         return res.status(401).json({ message: 'Invalid email or password' });
-    }
+    }   
 
     const token = user.generateAuthToken();
 

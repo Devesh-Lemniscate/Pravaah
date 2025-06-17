@@ -92,16 +92,6 @@ const UserLogin = () => {
           </Link>
         </p>
       </form>
-
-      {/* Captain Login */}
-      <div className="mt-6 w-full max-w-md">
-        <Link
-          to="/captain-login"
-          className="w-full bg-gradient-to-r from-green-600 via-teal-600 to-blue-600 text-white font-semibold py-3 rounded-lg shadow-lg flex items-center justify-center hover:scale-105 hover:shadow-2xl transition-transform duration-300"
-        >
-          Sign in as Captain
-        </Link>
-      </div>
     </div>
   );
 };
