@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LoadScript, GoogleMap, Marker, Polyline } from '@react-google-maps/api';
+// for rendering map markers and polylines
 import axios from 'axios';
 
 const containerStyle = { width: '100%', height: '100vh' };
@@ -47,7 +48,7 @@ const ShortestPath = () => {
           <GoogleMap
             mapContainerStyle={containerStyle}
             center={center}
-            zoom={12}
+            zoom={12} // 5: Country-level view   10-12: City-level view  15+: Street-level view
             options={{
               draggable: true,
               gestureHandling: 'auto',

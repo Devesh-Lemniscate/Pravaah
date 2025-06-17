@@ -3,6 +3,7 @@ import React, { createContext, useState } from 'react'
 export const UserDataContext = createContext()
 
 
+// eslint-disable-next-line react/prop-types
 const UserContext = ({ children }) => {
 
     const [ user, setUser ] = useState({
@@ -10,7 +11,7 @@ const UserContext = ({ children }) => {
         fullName: {
             firstName: '',
             lastName: ''
-        }
+        }   
     })
 
     return (

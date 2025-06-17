@@ -11,9 +11,10 @@ const containerStyle = {
   height: '100%',
 };
 
-const defaultCenter = { lat: 28.6139, lng: 77.2090 }; // Example: Delhi
+const defaultCenter = { lat: 30.2725, lng: 78.0008 }; // Graphic Era ka default center
 
 const Home = () => {
+  // Saare states yahan define kiye hain
   const [pickup, setPickup] = useState('');
   const [destination, setDestination] = useState('');
   const [panelOpen, setPanelOpen] = useState(false);
@@ -22,12 +23,17 @@ const Home = () => {
   const [activeField, setActiveField] = useState(null);
   const [paths, setPaths] = useState([]);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [controlPosition, setControlPosition] = useState(null);
+  const [showSingleRouteNotif, setShowSingleRouteNotif] = useState(false);
+  const [showAlternateRouteNotif, setShowAlternateRouteNotif] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
 
+  // Refs for panel and map
   const panelRef = useRef(null);
   const panelCloseRef = useRef(null);
   const mapRef = useRef(null);
 
-  // Animate panel open/close
+  // Panel open/close animation GSAP se
   useGSAP(() => {
     if (panelOpen) {
       gsap.to(panelRef.current, {
@@ -48,18 +54,18 @@ const Home = () => {
     }
   }, [panelOpen]);
 
-  // Fit map bounds when paths change
+  // Jab bhi paths change ho, map ko fit karo
   useEffect(() => {
     if (mapRef.current && paths.length > 0) {
       const bounds = new window.google.maps.LatLngBounds();
       paths.forEach(path => {
         path.coordinates.forEach(coord => bounds.extend(coord));
       });
-      mapRef.current.fitBounds(bounds);
+      mapRef.current.fitBounds(bounds); // fit all bound in screen and zoom accordingly
     }
   }, [paths]);
 
-  // Handle input changes and suggestions
+  // Pickup input change handle karo, suggestions lao
   const handlePickupChange = async (e) => {
     setPickup(e.target.value);
     if (e.target.value.length >= 3) {
@@ -79,6 +85,7 @@ const Home = () => {
     }
   };
 
+  // Destination input change handle karo, suggestions lao
   const handleDestinationChange = async (e) => {
     setDestination(e.target.value);
     if (e.target.value.length >= 3) {
@@ -98,9 +105,9 @@ const Home = () => {
     }
   };
 
-  // Find shortest paths
+  // Shortest path find karne ka function
   const findShortestPaths = async () => {
-    console.log('Finding shortest paths:', pickup, destination); // Add this line
+    console.log('Finding shortest paths:', pickup, destination); 
     if (!pickup || !destination) return;
     try {
       const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/shortest-paths`, {
@@ -113,17 +120,20 @@ const Home = () => {
       });
       setPaths(res.data.paths || []);
       if (res.data.center) setMapCenter(res.data.center);
+      setShowSingleRouteNotif(res.data.paths.length === 1);
+      setShowAlternateRouteNotif(res.data.paths.some(p => p.label === 'Alternate Route'));
+      setPanelOpen(false); 
     } catch (err) {
       alert('Could not find paths. Please try again.');
     }
   };
 
-  // Find best metrics
+  // Fastest, cheapest, shortest path nikalne ke liye reduce use kiya hai
   const fastest = paths.reduce((min, p) => (p.time < min.time ? p : min), paths[0] || {});
   const cheapest = paths.reduce((min, p) => (p.fuel < min.fuel ? p : min), paths[0] || {});
   const shortest = paths.reduce((min, p) => (p.distance < min.distance ? p : min), paths[0] || {});
 
-  // Helper to find which metrics share the same path
+  // Kaunse metrics same path share karte hain, yeh check karne ka helper
   const getSharedMetrics = () => {
     if (paths.length === 2) {
       const [a, b] = paths;
@@ -132,14 +142,14 @@ const Home = () => {
         { name: 'Least Fuel', path: cheapest },
         { name: 'Shortest Time', path: fastest },
       ];
-      // Group metrics by path
+      // Metrics ko path ke hisaab se group karo
       const groups = {};
       metrics.forEach(m => {
         const key = JSON.stringify(m.path.coordinates);
         if (!groups[key]) groups[key] = [];
         groups[key].push(m.name);
       });
-      // Find which two metrics share a path
+      // Do metrics jo same path share karte hain, unko dikhana hai
       const shared = Object.values(groups).find(arr => arr.length === 2);
       if (shared) {
         return `${shared.join(' and ')} share the same route.`;
@@ -148,9 +158,28 @@ const Home = () => {
     return null;
   };
 
+  useEffect(() => {
+    if (paths.length === 1) {
+      setShowSingleRouteNotif(true);
+      setTimeout(() => setShowSingleRouteNotif(false), 3000); // 3 seconds
+    }
+    if (paths.some(p => p.label === 'Alternate Route')) {
+      setShowAlternateRouteNotif(true);
+      setTimeout(() => setShowAlternateRouteNotif(false), 3000); // 3 seconds
+    }
+  }, [paths]);
+
+  useEffect(() => {
+    if (paths.length > 0) {
+      setShowLegend(true);
+      const timer = setTimeout(() => setShowLegend(false), 3000); // 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [paths]);
+
   return (
     <div className="h-screen relative overflow-hidden bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white">
-      {/* Header */}
+      {/* Header - App ka naam */}
       <div className="absolute top-5 left-5 z-10">
         <a
           target="_blank"
@@ -161,29 +190,37 @@ const Home = () => {
         </a>
       </div>
 
-      {/* Legend or Notification */}
-      {paths.length === 1 ? (
+      {/* Legend ya notification - kitne routes available hain */}
+      {paths.length === 1 && showSingleRouteNotif ? (
         <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 bg-yellow-900/90 rounded-lg p-4 shadow-lg text-sm">
-          Only one route available for these locations.
+          Only one route found
         </div>
-      ) : paths.length > 1 ? (
-        <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 bg-gray-900/90 rounded-lg p-4 shadow-lg flex flex-row gap-6 text-sm">
-          {paths.map((path, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <span className="inline-block w-4 h-4 rounded-full" style={{ background: path.color }}></span>
-              {path.label}
-              {path.label === 'Alternate Route' && (
-                <span className="text-xs text-yellow-400 ml-1">(complementary)</span>
-              )}
-            </div>
-          ))}
-          {paths.length === 2 && <div className="text-yellow-300">{getSharedMetrics()}</div>}
-        </div>
-      ) : null}
+      ) : (
+        showLegend && paths.length > 1 && (
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 bg-gray-900/90 rounded-lg p-4 shadow-lg flex flex-row gap-6 text-sm">
+            {paths.map((path, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 rounded-full" style={{ background: path.color }}></span>
+                {path.label}
+                {path.label === 'Alternate Route' && (
+                  <span className="text-xs text-yellow-400 ml-1">(complementary)</span>
+                )}
+              </div>
+            ))}
+            {paths.length === 2 && <div className="text-yellow-300">{getSharedMetrics()}</div>}
+          </div>
+        )
+      )}
 
-      {/* Route Metrics */}
+      {/* Route metrics - distance, time, fuel, algorithm */}
       {paths.length > 0 && (
-        <div className="absolute bottom-5 right-5 z-20 bg-gray-900/90 rounded-lg p-4 shadow-lg flex flex-col gap-2 text-sm min-w-[220px]">
+        <div
+          className={`${
+            panelOpen
+              ? 'absolute bottom-8 right-8'
+              : 'absolute top-20 left-8'
+          } z-20 bg-gray-900/90 rounded-lg p-4 shadow-lg flex flex-col gap-2 text-sm min-w-[220px]`}
+        >
           <div>
             <span className="font-semibold text-blue-400">Best Algorithm:</span>
             <span className="ml-2 font-bold text-yellow-300 uppercase px-2 py-1 rounded">
@@ -214,9 +251,16 @@ const Home = () => {
         </div>
       )}
 
-      {/* Map with polylines */}
+      {/* Map aur polylines draw karne ka section */}
       <div className="h-screen w-screen">
-        <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+        <LoadScript
+          googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+          onLoad={() => {
+            if (window.google && window.google.maps) {
+              setControlPosition(window.google.maps.ControlPosition.LEFT_CENTER);
+            }
+          }}
+        >
           <GoogleMap
             mapContainerStyle={containerStyle}
             center={mapCenter}
@@ -225,16 +269,15 @@ const Home = () => {
               draggable: true,
               gestureHandling: 'greedy',
               disableDefaultUI: false,
-              mapTypeControl: false, // Hide Map/Satellite
+              mapTypeControl: false,
               zoomControl: true,
-              zoomControlOptions: {
-                position: window.google.maps.ControlPosition.LEFT_BOTTOM, // Change position here
-              },
-              // You can similarly set position for other controls if needed
+              zoomControlOptions: controlPosition
+                ? { position: controlPosition }
+                : undefined,
             }}
             onLoad={map => { mapRef.current = map; }}
           >
-            {/* Draw all returned paths */}
+            {/* Saare path ko polyline se draw  */}
             {paths.map((path, idx) => (
               <Polyline
                 key={idx}
@@ -246,7 +289,7 @@ const Home = () => {
                 }}
               />
             ))}
-            {/* Markers for start/end */}
+            {/* Start aur end ke liye marker */}
             {paths[0] && (
               <>
                 <Marker position={paths[0].coordinates[0]} label="A" />
@@ -257,14 +300,14 @@ const Home = () => {
         </LoadScript>
       </div>
 
-      {/* Bottom Panel */}
+      {/* Bottom panel - input lene ke liye */}
       <div
-        className="flex flex-col justify-end h-screen absolute top-0 w-full"
-        style={{ pointerEvents: 'none' }} // <-- Add this
+        className="flex flex-col justify-end h-[93%] absolute bottom-0 w-full"
+        style={{ pointerEvents: 'none' }} // Panel ke alawa sab disable
       >
         <div
           className="h-[30%] p-6 bg-gray-900/80 rounded-t-3xl shadow-lg"
-          style={{ pointerEvents: 'auto' }} // <-- Add this
+          style={{ pointerEvents: 'auto' }} // Panel enable
         >
           <h5
             ref={panelCloseRef}
@@ -309,7 +352,7 @@ const Home = () => {
         <div
           ref={panelRef}
           className="bg-gray-900/90 h-0"
-          style={{ pointerEvents: 'auto' }} // <-- Add this
+          style={{ pointerEvents: 'auto' }} // Panel enable
         >
           <LocationSearchPanel
             suggestions={activeField === 'pickup' ? pickupSuggestions : destinationSuggestions}
@@ -321,10 +364,15 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Notification for alternate route */}
-      {paths.some(p => p.label === 'Alternate Route') && (
+      {showSingleRouteNotif && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 bg-yellow-900/90 rounded-lg p-4 shadow-lg text-sm">
+          Only one route found
+        </div>
+      )}
+
+      {showAlternateRouteNotif && (
         <div className="absolute top-[90px] left-1/2 -translate-x-1/2 z-20 bg-orange-900/90 rounded-lg p-3 shadow text-xs text-orange-200">
-          An alternate route is shown for demonstration purposes.
+          An alternate route is available for demo 
         </div>
       )}
     </div>

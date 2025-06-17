@@ -6,7 +6,7 @@ let io;
 function initializeSocket(server) {
     io = socketIo(server, {
         cors: {
-            origin: '*',
+            origin: '*', // accept all origins
             methods: [ 'GET', 'POST' ]
         }
     });

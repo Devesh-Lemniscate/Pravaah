@@ -1,3 +1,4 @@
+// helpful for securely logging users out by preventing further use of their old token
 const mongoose = require('mongoose');
 
 const blacklistTokenSchema = new mongoose.Schema({

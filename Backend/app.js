@@ -1,7 +1,7 @@
 const dotenv = require('dotenv');
 dotenv.config();
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // Enables Cross-Origin Resource Sharing (frontend & backend on different domains).
 const app = express();
 const cookieParser = require('cookie-parser');
 const connectToDb = require('./db/db');
